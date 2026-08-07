@@ -1,0 +1,30 @@
+{
+  "project": "XianZhu-S2B2C",
+  "build_type": "docker-containerized",
+  "build_branch": "develop",
+  "build_time": "20260807_141801",
+  "git_commit": "N/A",
+  "artifacts": {
+    "backend_jars": [
+      "consumer.jar",
+      "resource-service.jar",
+      "supplier-service.jar",
+      "user-service.jar",
+      "distribution-service.jar",
+      "statistics-service.jar",
+      "broadcast-service.jar",
+      "goods-service.jar",
+      "auth-service.jar",
+      "order-service.jar",
+      "im-service.jar",
+      "payment-service.jar",
+      "xianzhu-service.jar",
+      "promotion-service.jar",
+      "gateway.jar",
+      "system-service.jar"
+    ],
+    "frontend_modules": [
+
+    ]
+  }
+}

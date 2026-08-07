@@ -1,0 +1,386 @@
+services:
+  # =========================================================================
+  # 1. MIDDLEWARE SERVICES (STACK TRUNG TRẠM: NACOS, MYSQL, REDIS, RABBITMQ, ES)
+  #    Tối ưu hóa RAM cho máy 8GB Host (Tổng Ram Middleware ~1.65 GB)
+  # =========================================================================
+  mysql:
+    image: mysql:8.0.32
+    container_name: builds-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    command: --innodb_buffer_pool_size=192M --max_connections=80
+    environment:
+      - MYSQL_ROOT_PASSWORD=lilishop
+      - MYSQL_DATABASE=lilishop
+      - TZ=Asia/Ho_Chi_Minh
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: builds-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --port 6379 --requirepass lilishop --maxmemory 128mb --maxmemory-policy volatile-lru
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  nacos:
+    image: nacos/nacos-server:v2.2.0
+    container_name: builds-nacos
+    restart: always
+    environment:
+      - MODE=standalone
+      - JVM_XMS=512m
+      - JVM_XMX=1024m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: builds-rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=lilishop
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: builds-elasticsearch
+    restart: always
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms128m -Xmx256m
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+
+  # =========================================================================
+  # 2. BACKEND SERVICES (CHẠY FILE JAR TRONG builds/backend/)
+  #    Tối ưu hóa RAM cho máy 8GB Host (Mỗi Java Microservice: Heap 256M, Metaspace 128M, Limit 320M)
+  # =========================================================================
+  gateway:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-gateway
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/gateway.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  auth-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-auth-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/auth-service.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  user-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-user-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/user-service.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  goods-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-goods-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/goods-service.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  order-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-order-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/order-service.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  consumer:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-consumer
+    restart: always
+    depends_on:
+      - rabbitmq
+      - nacos
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/consumer.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  xianzhu-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: builds-xianzhu-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/xianzhu-service.jar
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  # =========================================================================
+  # OPTIONAL SERVICES (Mặc định ẩn để tối ưu RAM cho luồng test Buyer UI)
+  # Bỏ comment nếu cần test toàn bộ các nghiệp vụ nâng cao khác
+  # =========================================================================
+  # supplier-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-supplier-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/supplier-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # system-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-system-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/system-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # payment-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-payment-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/payment-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # promotion-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-promotion-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/promotion-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # statistics-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-statistics-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/statistics-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # resource-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-resource-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/resource-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # broadcast-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-broadcast-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/broadcast-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # im-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-im-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   ports:
+  #     - "11130:11130"
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/im-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+  # distribution-service:
+  #   image: eclipse-temurin:21-jre-alpine
+  #   container_name: builds-distribution-service
+  #   restart: always
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+  #     - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+  #   volumes:
+  #     - ./backend:/app
+  #   command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/distribution-service.jar
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 320M
+
+
+  # =========================================================================
+  # 3. FRONTEND UI SERVICE (NGINX)
+  # =========================================================================
+  buyer-ui:
+    image: nginx:alpine
+    container_name: builds-buyer-ui
+    restart: always
+    depends_on:
+      - gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/buyer:/usr/share/nginx/html/buyer:ro
+      - ./frontend/seller:/usr/share/nginx/html/seller:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 64M
