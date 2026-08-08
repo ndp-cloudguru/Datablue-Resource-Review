@@ -1,0 +1,190 @@
+spring:
+  main:
+    web-application-type: reactive
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:lilishop}
+      database: ${REDIS_DATABASE:0}
+      lettuce:
+        pool:
+          max-active: 200
+          max-wait: 20s
+          max-idle: 10
+          min-idle: 2
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allow-credentials: true
+            allowed-headers: '*'
+            allowed-origin-patterns: '*'
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - OPTIONS
+              - DELETE
+            max-age: 1296000
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+        - id: system-service
+          uri: lb://system-service
+          predicates:
+            - Path=/system/**
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+        - id: statistics-service
+          uri: lb://statistics-service
+          predicates:
+            - Path=/statistics/**
+        - id: goods-service
+          uri: lb://goods-service
+          predicates:
+            - Path=/goods/**
+        - id: resource-service
+          uri: lb://resource-service
+          predicates:
+            - Path=/resource/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/order/**,/trade/**
+        - id: promotion-service
+          uri: lb://promotion-service
+          predicates:
+            - Path=/promotion/**
+        - id: broadcast-service
+          uri: lb://broadcast-service
+          predicates:
+            - Path=/broadcast/**
+        - id: distribution-service
+          uri: lb://distribution-service
+          predicates:
+            - Path=/distribution/**
+        - id: supplier-service
+          uri: lb://supplier-service
+          predicates:
+            - Path=/supplier/**
+        - id: im-service
+          uri: lb://im-service
+          predicates:
+            - Path=/im/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment/**,/recharge/**
+
+auth:
+  scenes:
+    STORE:
+      methods:
+        GET:
+          - /user/**
+          - /system/**
+          - /goods/**
+          - /order/**
+          - /trade/**
+          - /promotion/**
+          - /statistics/**
+          - /resource/**
+          - /payment/**
+          - /recharge/**
+          - /im/**
+          - /broadcast/**
+          - /distribution/**
+        POST:
+          - /user/**
+          - /system/**
+          - /goods/**
+          - /order/**
+          - /trade/**
+          - /promotion/**
+          - /statistics/**
+          - /resource/**
+          - /payment/**
+          - /recharge/**
+          - /im/**
+          - /broadcast/**
+          - /distribution/**
+        PUT:
+          - /user/**
+          - /system/**
+          - /goods/**
+          - /order/**
+          - /trade/**
+          - /promotion/**
+          - /statistics/**
+          - /resource/**
+          - /payment/**
+          - /recharge/**
+          - /im/**
+          - /broadcast/**
+          - /distribution/**
+        DELETE:
+          - /user/**
+          - /system/**
+          - /goods/**
+          - /order/**
+          - /trade/**
+          - /promotion/**
+          - /statistics/**
+          - /resource/**
+          - /payment/**
+          - /recharge/**
+          - /im/**
+          - /broadcast/**
+          - /distribution/**
+
+ignored:
+  urls:
+    - /auth/**
+    - /system/site
+    - /system/page/show
+    - /system/words/hot/hot-words
+    - /system/article
+    - /system/article/articleCategory/list
+    - /system/sms/**
+    - /promotion/seckill/today
+    - /promotion/coupon/activity
+    - /promotion/haggle/activity
+    - /promotion/pintuan/goods
+    - /user/collection/**
+    - /user/evaluation/show/**
+    - /user/evaluation/number/**
+    - /goods/**
+    - /user/store/address/show/**
+    - /test/**
+    - /editor-app/**
+    - /actuator**
+    - /actuator/**
+    - /weixin/**
+    - /source/**
+    - /common/verification/**
+    - /common/**
+    - /supplier/**
+    - /druid/**
+    - /swagger-ui.html
+    - /doc.html
+    - /swagger-resources/**
+    - /swagger/**
+    - /webjars/**
+    - /v2/api-docs**
+    - /v3/api-docs**
+    - /configuration/ui
+    - /boot-admin
+    - /manager/promotion/seckill/init
+    - /**/*.js
+    - /**/*.css
+    - /**/*.png
+    - /**/*.ico

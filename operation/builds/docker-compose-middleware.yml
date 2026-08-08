@@ -1,0 +1,133 @@
+# =========================================================================
+# XianZhu S2B2C - Docker Compose cho Middleware Services
+# Bao gồm: MySQL, Redis, Nacos, RabbitMQ, Elasticsearch, Seata Server
+# Chạy lệnh: docker compose -f docker-compose-middleware.yml up -d
+# =========================================================================
+
+networks:
+  xianzhu-net:
+    name: xianzhu-net
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.0.32
+    container_name: xianzhu-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    command: --innodb_buffer_pool_size=192M --max_connections=80
+    environment:
+      - MYSQL_ROOT_PASSWORD=lilishop
+      - MYSQL_DATABASE=lilishop
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ../../source-code/S2B2B2C-Service-develop/docker/dev/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      xianzhu-net:
+        aliases:
+          - mysql
+          - mysql-service.lilishop-middleware
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: xianzhu-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --port 6379 --requirepass lilishop --maxmemory 128mb --maxmemory-policy volatile-lru
+    networks:
+      xianzhu-net:
+        aliases:
+          - redis
+          - redis-service.lilishop-middleware
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  nacos:
+    image: nacos/nacos-server:v2.2.0
+    container_name: xianzhu-nacos
+    restart: always
+    environment:
+      - MODE=standalone
+      - JVM_XMS=512m
+      - JVM_XMX=1024m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    networks:
+      xianzhu-net:
+        aliases:
+          - nacos
+          - nacos-service.lilishop-middleware
+          - nacos.lilishop-middleware
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: xianzhu-rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=lilishop
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      xianzhu-net:
+        aliases:
+          - rabbitmq
+          - rabbitmq-service.lilishop-middleware
+          - rabbitmq-cluster.lilishop-middleware
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: xianzhu-elasticsearch
+    restart: always
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms128m -Xmx256m
+    networks:
+      xianzhu-net:
+        aliases:
+          - elasticsearch
+          - elasticsearch-service.lilishop-middleware
+          - elasticsearch.lilishop-middleware
+
+  seata-server:
+    image: seataio/seata-server:1.5.2
+    container_name: xianzhu-seata-server
+    restart: always
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    environment:
+      - SEATA_IP=seata-server
+      - SEATA_PORT=8091
+    networks:
+      xianzhu-net:
+        aliases:
+          - seata
+          - seata-server
+          - seata-service.lilishop-middleware
+          - seata.lilishop-middleware
+    deploy:
+      resources:
+        limits:
+          memory: 350M

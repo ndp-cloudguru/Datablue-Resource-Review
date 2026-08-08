@@ -1,0 +1,228 @@
+management:
+  health:
+    db:
+      enabled: false
+
+swagger:
+  title: LiliShop Development API
+  description: Local development API documentation
+  version: latest
+  termsOfServiceUrl: http://127.0.0.1
+  contact:
+    name: LiliShop Development
+    url: http://127.0.0.1
+    email: dev@localhost
+
+promotion:
+  url-prefix: ${PROMOTION_URL_PREFIX:http://127.0.0.1:8888}
+
+unipush:
+  enabled: false
+  app-id: ${UNIPUSH_APP_ID:dev-disabled}
+  app-key: ${UNIPUSH_APP_KEY:dev-disabled}
+  master-secret: ${UNIPUSH_MASTER_SECRET:dev-disabled}
+  api: ${UNIPUSH_API:http://127.0.0.1:9}
+
+server:
+  servlet:
+    context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      min-spare: 20
+      max: 200
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/lilishop?useUnicode=true&characterEncoding=utf-8&useSSL=false&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:lilishop}
+    initial-size: 5
+    min-idle: 5
+    max-active: 20
+    max-wait: 60000
+    time-between-eviction-runs-millis: 60000
+    min-evictable-idle-time-millis: 300000
+    validation-query: SELECT 1
+    test-while-idle: true
+    test-on-borrow: false
+    test-on-return: false
+    pool-prepared-statements: false
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:lilishop}
+      database: ${REDIS_DATABASE:0}
+      lettuce:
+        pool:
+          max-active: 200
+          max-wait: 20s
+          max-idle: 10
+          min-idle: 2
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:lilishop}
+  cloud:
+    nacos:
+      discovery:
+        failure-tolerance-enabled: true
+  cache:
+    type: redis
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: GMT+8
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    cache-enabled: true
+
+logging:
+  config: classpath:logback-lilishop-dev.xml
+  level:
+    cn.lili: info
+  file:
+    path: logs
+  logback:
+    rollingpolicy:
+      max-history: 7
+      max-file-size: 5MB
+
+lili:
+  amqp:
+    after_sale: after_sale_lilishop
+    goods: goods_lilishop
+    order: order_lilishop
+    promotion: promotion_lilishop
+    user: user_lilishop
+    msg: msg_lilishop
+    store: store_lilishop
+    payment: payment_lilishop
+    agreement: agreement_lilishop
+  verification-code:
+    effective-time: 300
+    watermark: LILI-SHOP
+    interfere-num: 1
+    fault-tolerant: 3
+  system:
+    is-demo-site: false
+    is-test-model: true
+  statistics:
+    online-member: 48
+    current-online-update: 600
+  domain:
+    pc: ${LILI_PC_URL:http://127.0.0.1:8888}
+    wap: ${LILI_WAP_URL:http://127.0.0.1:8888}
+    store: ${LILI_STORE_URL:http://127.0.0.1:8888}
+    admin: ${LILI_ADMIN_URL:http://127.0.0.1:8888}
+  api:
+    buyer: ${LILI_BUYER_API:http://127.0.0.1:8888}
+    store: ${LILI_STORE_API:http://127.0.0.1:8888}
+    manager: ${LILI_MANAGER_API:http://127.0.0.1:8888}
+    common: ${LILI_COMMON_API:http://127.0.0.1:8888}
+  jd:
+    api-base-url: ${JD_HUICAI_API_BASE_URL:https://bizapi.jd.com}
+    bill-api-base-url: ${JD_HUICAI_BILL_API_BASE_URL:http://cvop.jd.com/component/http/JSON/jincai}
+    image-base-url: ${JD_HUICAI_IMAGE_BASE_URL:https://img13.360buyimg.com/n12}
+    username: ${JD_HUICAI_USERNAME:mock-user}
+    password: ${JD_HUICAI_PASSWORD:mock-password}
+    client-id: ${JD_HUICAI_CLIENT_ID:mock-client}
+    client-secret: ${JD_HUICAI_CLIENT_SECRET:mock-secret}
+    plus-price: ${JD_HUICAI_PLUS_PRICE:0.2}
+    min-price: ${JD_HUICAI_MIN_PRICE:0.0}
+    max-price: ${JD_HUICAI_MAX_PRICE:2000.0}
+    proxy-store-id: ${JD_HUICAI_PROXY_STORE_ID:1376433565247471616}
+    proxy-store-name: ${JD_HUICAI_PROXY_STORE_NAME:商城自营}
+    jd-listener: ${JD_HUICAI_LISTENER:false}
+    mock:
+      enabled: ${JD_HUICAI_MOCK_ENABLED:true}
+      base-url: ${JD_HUICAI_MOCK_BASE_URL:https://6a6c509d9939b347cccea9ed.mockapi.io/api/v1}
+      resource: ${JD_HUICAI_MOCK_RESOURCE:jd-responses}
+  xianzhuhua:
+    enabled: ${XIANZHUHUA_ENABLED:false}
+    url: ${XIANZHUHUA_URL:http://127.0.0.1:9}
+    appkey: ${XIANZHUHUA_APP_KEY:dev-disabled}
+    secrct: ${XIANZHUHUA_SECRET:dev-disabled}
+  jwt-setting:
+    token-expire-time: 30000
+  cache:
+    timeout: 1500
+  thread:
+    core-pool-size: 5
+    max-pool-size: 50
+    queue-capacity: 50
+  data:
+    elasticsearch:
+      cluster-name: elasticsearch
+      cluster-nodes: ${ELASTICSEARCH_HOST:127.0.0.1}:${ELASTICSEARCH_PORT:9200}
+      index:
+        number-of-replicas: 0
+        number-of-shards: 3
+      index-prefix: lilishop-s2b2b2c-dev
+      schema: http
+
+xxl:
+  job:
+    admin:
+      addresses: ${XXL_JOB_ADMIN_URL:http://127.0.0.1:9001/xxl-job-admin}
+    accessToken: ${XXL_JOB_ACCESS_TOKEN:}
+    executor:
+      appname: xxl-job-executor-lilishop
+      address: ${XXL_JOB_EXECUTOR_ADDRESS:}
+      ip: ${XXL_JOB_EXECUTOR_IP:}
+      port: ${XXL_JOB_EXECUTOR_PORT:8891}
+      logpath: ./xxl-job/executor
+      logretentiondays: 7
+
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 500000
+        read-timeout: 500000
+        logger-level: basic
+  circuitbreaker:
+    enabled: true
+
+seata:
+  enabled: true
+  service:
+    vgroup-mapping:
+      default_tx_group: default
+      auth-service-group: default
+      broadcast-service-group: default
+      distribution-service-group: default
+      goods-service-group: default
+      im-service-group: default
+      order-service-group: default
+      payment-service-group: default
+      promotion-service-group: default
+      resource-service-group: default
+      statistics-service-group: default
+      supplier-service-group: default
+      system-service-group: default
+    grouplist:
+      default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}
+  registry:
+    type: file
+  config:
+    type: file

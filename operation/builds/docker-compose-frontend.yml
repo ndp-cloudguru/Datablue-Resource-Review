@@ -1,0 +1,113 @@
+# =========================================================================
+# XianZhu S2B2C - Docker Compose cho Frontend UI Services (1 Image / Container per FE)
+# Chạy lệnh: docker compose -f docker-compose-frontend.yml up -d
+# Yêu cầu: Backend đã chạy trước đó để khởi tạo docker network 'xianzhu-net'
+# =========================================================================
+
+networks:
+  xianzhu-net:
+    name: xianzhu-net
+    external: true
+
+services:
+  # =========================================================================
+  # 1. MAIN FRONTEND REVERSE PROXY NGINX (Cổng 8080 chính điều hướng)
+  # =========================================================================
+  frontend-gateway:
+    image: nginx:alpine
+    container_name: xianzhu-frontend-gateway
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - buyer-ui
+      - seller-ui
+      - manager-ui
+      - supplier-ui
+      - im-ui
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  # =========================================================================
+  # 2. INDIVIDUAL FRONTEND APPS (Mỗi ứng dụng 1 Container Nginx riêng biệt)
+  # =========================================================================
+  buyer-ui:
+    image: nginx:alpine
+    container_name: xianzhu-buyer-ui
+    restart: always
+    ports:
+      - "10000:80"
+    volumes:
+      - ./frontend/buyer:/usr/share/nginx/html:ro
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  seller-ui:
+    image: nginx:alpine
+    container_name: xianzhu-seller-ui
+    restart: always
+    ports:
+      - "10002:80"
+    volumes:
+      - ./frontend/seller:/usr/share/nginx/html:ro
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  manager-ui:
+    image: nginx:alpine
+    container_name: xianzhu-manager-ui
+    restart: always
+    ports:
+      - "10003:80"
+    volumes:
+      - ./frontend/manager:/usr/share/nginx/html:ro
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  supplier-ui:
+    image: nginx:alpine
+    container_name: xianzhu-supplier-ui
+    restart: always
+    ports:
+      - "10004:80"
+    volumes:
+      - ./frontend/supplier-platform:/usr/share/nginx/html:ro
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  im-ui:
+    image: nginx:alpine
+    container_name: xianzhu-im-ui
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./frontend/im:/usr/share/nginx/html:ro
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 32M

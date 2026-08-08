@@ -40,6 +40,8 @@ operation/builds/backend/*
 !operation/builds/backend/.gitkeep
 operation/builds/frontend/*
 !operation/builds/frontend/.gitkeep
+!operation/builds/frontend/nginx/
+!operation/builds/frontend/nginx/*
 # Secrets & Credentials
 .mvn-credentials*
 

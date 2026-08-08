@@ -7,114 +7,121 @@ Tài liệu này cung cấp **Sơ đồ kết nối tổng thể (Connection Dia
 ## 🗺️ 1. Sơ Đồ Kết Nối Tổng Thể Các Services (System Connection Diagram)
 
 ```mermaid
-graph TB
-    subgraph ClientLayer["📱 CLIENT LAYER - Giao diện người dùng"]
-        BuyerUI["🛍️ Buyer Client (PC / H5 / MiniApp)"]
-        SellerUI["🏪 Seller Portal (Thương gia)"]
-        SupplierUI["🚚 Supplier Portal (Nhà cung cấp)"]
-        AdminUI["🖥️ Manager Portal (Quản trị sàn)"]
-        IMClient["💬 IM Chat Client (Ứng dụng Chat)"]
+flowchart TD
+    %% =========================================================================
+    %% LAYER 1: CLIENT LAYER (GIAO DIỆN NGƯỜI DÙNG)
+    %% =========================================================================
+    subgraph L1["CLIENT LAYER (Frontend Web Apps)"]
+        BuyerUI["Buyer UI (Port 10000 / 8080)"]
+        SellerUI["Seller UI (Port 10002)"]
+        ManagerUI["Manager UI (Port 10003)"]
+        SupplierUI["Supplier UI (Port 10004)"]
+        IMUI["IM Chat UI (Port 8000)"]
     end
 
-    subgraph EntryLayer["🌐 ENTRY AND GATEWAY LAYER"]
-        Nginx["🌐 Nginx Ingress / Web Server"]
-        Gateway["⚡ Spring Cloud Gateway (Port 8888)"]
+    %% =========================================================================
+    %% LAYER 2: INGRESS & REVERSE PROXY LAYER
+    %% =========================================================================
+    subgraph L2["INGRESS & GATEWAY PROXY LAYER"]
+        NginxGateway["Single Nginx Gateway / Reverse Proxy (Port 8080 - Path Routing)"]
     end
 
-    subgraph ServiceLayer["☕ MICROSERVICES BUSINESS LAYER"]
-        AuthSvc["🔐 auth-api"]
-        UserSvc["👤 user-api / member-api"]
-        GoodsSvc["📦 goods-api"]
-        OrderSvc["🛒 order-api"]
-        PaymentSvc["💳 payment-api"]
-        PromoSvc["🏷️ promotion-api"]
-        SupplierSvc["🏬 supplier-api"]
-        IMSvc["💬 im-api (WebSocket Port 11130)"]
-        ConsumerSvc["⚙️ consumer (Async Event Listener)"]
+    %% =========================================================================
+    %% LAYER 3: API GATEWAY LAYER
+    %% =========================================================================
+    subgraph L3["API GATEWAY & ROUTING LAYER"]
+        SpringGateway["Spring Cloud Gateway (Port 8888 - Authentication & Load Balancing)"]
     end
 
-    subgraph InfraLayer["🗄️ MIDDLEWARE INFRASTRUCTURE LAYER"]
-        Nacos["🌀 Nacos 2.x (Registry & Config)"]
-        Seata["🛡️ Seata 1.6 (Distributed TX)"]
-        XXL["⏰ XXL-JOB 2.4 (Job Scheduler)"]
-        Redis["⚡ Redis 7.0 (Cache & Redisson Lock)"]
-        MySQL["🗄️ MySQL 8.0 (Master Database)"]
-        ES["🔍 Elasticsearch 7.17 (Search Engine)"]
-        RabbitMQ["🐰 RabbitMQ 3.x (Message Broker)"]
+    %% =========================================================================
+    %% LAYER 4: MICROSERVICES BUSINESS LAYER
+    %% =========================================================================
+    subgraph L4["BACKEND MICROSERVICES LAYER (Spring Cloud)"]
+        AuthSvc["auth-service (OAuth2 & JWT)"]
+        UserSvc["user-service (Member & Wallet)"]
+        GoodsSvc["goods-service (Catalog & Stock)"]
+        OrderSvc["order-service (Cart & Checkout)"]
+        PaymentSvc["payment-service (Pay & Refund)"]
+        PromoSvc["promotion-service (Coupon & Discount)"]
+        SupplierSvc["supplier-service (S2B Supplier)"]
+        SystemSvc["system-service (Setting & Menu)"]
+        IMSvc["im-service (WebSocket Port 11130)"]
+        ConsumerSvc["consumer-service (RabbitMQ Worker)"]
     end
 
-    BuyerUI --> Nginx
-    SellerUI --> Nginx
-    SupplierUI --> Nginx
-    AdminUI --> Nginx
-    IMClient --> IMSvc
+    %% =========================================================================
+    %% LAYER 5: SERVICE GOVERNANCE & MIDDLEWARE LAYER
+    %% =========================================================================
+    subgraph L5["GOVERNANCE & EVENT BROKER LAYER"]
+        Nacos["Nacos Server 2.2 (Config & Discovery)"]
+        Seata["Seata Server 1.5 (Distributed 2PC TX)"]
+        RabbitMQ["RabbitMQ 3.12 (Event Queue / Async)"]
+    end
 
-    Nginx --> Gateway
+    %% =========================================================================
+    %% LAYER 6: DATA PERSISTENCE & CACHE LAYER
+    %% =========================================================================
+    subgraph L6["DATA PERSISTENCE & STORAGE LAYER"]
+        MySQL[("MySQL 8.0 (RDBMS Master DB)")]
+        Redis[("Redis 7.0 (Session & Cache)")]
+        Elasticsearch[("Elasticsearch 7.17 (Search Engine)")]
+    end
 
-    Gateway --> AuthSvc
-    Gateway --> UserSvc
-    Gateway --> GoodsSvc
-    Gateway --> OrderSvc
-    Gateway --> PaymentSvc
-    Gateway --> PromoSvc
-    Gateway --> SupplierSvc
+    %% =========================================================================
+    %% STRICT LAYER TO LAYER CONNECTIONS
+    %% =========================================================================
 
-    ServiceLayer --> Nacos
-    OrderSvc --> Seata
-    GoodsSvc --> Seata
-    UserSvc --> Seata
+    %% Layer 1 -> Layer 2
+    BuyerUI -->|HTTP / Path /| NginxGateway
+    SellerUI -->|HTTP / Path /seller| NginxGateway
+    ManagerUI -->|HTTP / Path /manager| NginxGateway
+    SupplierUI -->|HTTP / Path /supplier-platform| NginxGateway
+    IMUI -->|HTTP / Path /im| NginxGateway
 
-    OrderSvc --> Redis
-    GoodsSvc --> Redis
-    AuthSvc --> Redis
-    PaymentSvc --> Redis
+    %% Layer 2 -> Layer 3
+    NginxGateway -->|Reverse Proxy /api/*| SpringGateway
 
-    ServiceLayer --> MySQL
-    GoodsSvc --> ES
-    BuyerUI --> ES
+    %% Layer 3 -> Layer 4
+    SpringGateway -->|lb://auth-service| AuthSvc
+    SpringGateway -->|lb://user-service| UserSvc
+    SpringGateway -->|lb://goods-service| GoodsSvc
+    SpringGateway -->|lb://order-service| OrderSvc
+    SpringGateway -->|lb://payment-service| PaymentSvc
+    SpringGateway -->|lb://promotion-service| PromoSvc
+    SpringGateway -->|lb://supplier-service| SupplierSvc
+    SpringGateway -->|lb://system-service| SystemSvc
+    SpringGateway -->|WS /im/*| IMSvc
 
-    OrderSvc --> RabbitMQ
-    PaymentSvc --> RabbitMQ
-    GoodsSvc --> RabbitMQ
-    RabbitMQ --> ConsumerSvc
-    ConsumerSvc --> ES
-    ConsumerSvc --> MySQL
+    %% Layer 4 -> Layer 5
+    L4 -.->|Register & Config| Nacos
+    OrderSvc -.->|Global TX| Seata
+    GoodsSvc -.->|Branch TX| Seata
+    OrderSvc -->|Publish Event| RabbitMQ
+    PaymentSvc -->|Publish Event| RabbitMQ
+    RabbitMQ -->|Consume Event| ConsumerSvc
 
-    XXL --> OrderSvc
-    XXL --> PaymentSvc
+    %% Layer 4 -> Layer 6
+    L4 ===>|CRUD SQL| MySQL
+    L4 ===>|Cache / Lock| Redis
+    GoodsSvc ==>|Sync Index| Elasticsearch
+    ConsumerSvc ==>|Async Index| Elasticsearch
 
-    %% Vibrant Color Styling
-    style ClientLayer fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1
-    style EntryLayer fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e
-    style ServiceLayer fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#15803d
-    style InfraLayer fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#6b21a8
+    %% =========================================================================
+    %% STYLING FOR VISUAL EXCELLENCE
+    %% =========================================================================
+    classDef l1Style fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1;
+    classDef l2Style fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px,color:#E65100;
+    classDef l3Style fill:#FCE4EC,stroke:#C2185B,stroke-width:2px,color:#880E4F;
+    classDef l4Style fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
+    classDef l5Style fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C;
+    classDef l6Style fill:#E0F7FA,stroke:#00796B,stroke-width:2px,color:#004D40;
 
-    style BuyerUI fill:#ffffff,stroke:#0284c7,color:#0f172a
-    style SellerUI fill:#ffffff,stroke:#0284c7,color:#0f172a
-    style SupplierUI fill:#ffffff,stroke:#0284c7,color:#0f172a
-    style AdminUI fill:#ffffff,stroke:#0284c7,color:#0f172a
-    style IMClient fill:#ffffff,stroke:#0284c7,color:#0f172a
-
-    style Nginx fill:#ffffff,stroke:#d97706,color:#0f172a
-    style Gateway fill:#ffffff,stroke:#d97706,color:#0f172a
-
-    style AuthSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style UserSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style GoodsSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style OrderSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style PaymentSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style PromoSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style SupplierSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style IMSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-    style ConsumerSvc fill:#ffffff,stroke:#16a34a,color:#0f172a
-
-    style Nacos fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style Seata fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style XXL fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style Redis fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style MySQL fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style ES fill:#ffffff,stroke:#9333ea,color:#0f172a
-    style RabbitMQ fill:#ffffff,stroke:#9333ea,color:#0f172a
+    class L1 l1Style;
+    class L2 l2Style;
+    class L3 l3Style;
+    class L4 l4Style;
+    class L5 l5Style;
+    class L6 l6Style;
 ```
 
 ---

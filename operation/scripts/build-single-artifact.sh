@@ -7,6 +7,9 @@
 
 set -e
 
+# Tắt tự động convert đường dẫn POSIX trên Git Bash (Windows) khi truyền vào Docker
+export MSYS_NO_PATHCONV=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -d "${SCRIPT_DIR}/source-code" ]; then
     PROJECT_ROOT="${SCRIPT_DIR}"
@@ -71,7 +74,7 @@ build_single_backend() {
         -e NEXUS_PASSWORD="${NEXUS_PASSWORD}" \
         -v "${src_dir}:/app" \
         -v "${MAVEN_CACHE_DIR}:/root/.m2" \
-        -v "${PROJECT_ROOT}/operation/deployment/settings.xml:/root/.m2/settings.xml" \
+        -v "${PROJECT_ROOT}/operation/scripts/settings.xml:/root/.m2/settings.xml" \
         -w /app \
         maven:3.9.6-eclipse-temurin-21 \
         sh -c "${mvn_target_arg}"
@@ -138,12 +141,18 @@ build_single_frontend() {
                 -v "${src_dir}/${mod}:/src_module" \
                 -v "${YARN_CACHE_DIR}:/root/.cache/yarn" \
                 node:22-alpine \
-                sh -c "mkdir -p /tmp/app && cp -r /src_module/* /tmp/app/ 2>/dev/null || true; cd /tmp/app && yarn config set registry https://registry.npmmirror.com && yarn config set strict-ssl false && rm -rf dist && yarn install --ignore-engines --silent && NODE_OPTIONS=--max-old-space-size=4096 yarn --ignore-engines build && mkdir -p /src_module/dist && cp -r dist/* /src_module/dist/"
+                sh -c "mkdir -p /tmp/app && cp -r /src_module/* /tmp/app/ 2>/dev/null || true; cd /tmp/app && yarn config set registry https://registry.npmmirror.com && yarn config set strict-ssl false && rm -rf dist && yarn install --ignore-engines --silent && NODE_OPTIONS=--max-old-space-size=4096 yarn --ignore-engines build --mode dev && mkdir -p /src_module/dist && cp -r dist/* /src_module/dist/"
 
             if [ -d "${src_dir}/${mod}/dist" ]; then
                 mkdir -p "${BUILDS_DIR}/frontend/${mod}"
                 cp -r "${src_dir}/${mod}/dist"/* "${BUILDS_DIR}/frontend/${mod}/"
-                echo -e "  ${GREEN}[✓] HOÀN TẤT: UI Module ${mod} -> builds/frontend/${mod}/${NC}"
+
+                # Cập nhật giá trị API_DEV từ tham số truyền vào script (Mặc định: http://localhost:8888)
+                TARGET_API_DEV="${API_DEV:-http://localhost:8888}"
+                if [ -f "${BUILDS_DIR}/frontend/${mod}/config.js" ]; then
+                    sed -i "s|gateway: *\"[^\"]*\"|gateway: \"${TARGET_API_DEV}\"|1" "${BUILDS_DIR}/frontend/${mod}/config.js" 2>/dev/null || true
+                fi
+                echo -e "  ${GREEN}[✓] HOÀN TẤT: UI Module ${mod} (API_DEV=${TARGET_API_DEV}) -> builds/frontend/${mod}/${NC}"
             fi
         else
             echo -e "  ${YELLOW}[!] Thư mục ${src_dir}/${mod} không tồn tại!${NC}"

@@ -1,0 +1,3 @@
+# External proxy routes are environment-specific. An empty map keeps the
+# service bootable without enabling any upstream integration.
+route: "{}"

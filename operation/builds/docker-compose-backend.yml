@@ -1,0 +1,476 @@
+# =========================================================================
+# XianZhu S2B2C - Docker Compose cho Backend Microservices
+# Lưu ý: Chạy Middleware trước (docker compose -f docker-compose-middleware.yml up -d)
+# Chạy lệnh: docker compose -f docker-compose-backend.yml up -d
+# =========================================================================
+
+networks:
+  xianzhu-net:
+    name: xianzhu-net
+    external: true
+
+services:
+  # =========================================================================
+  # BACKEND MICROSERVICES (CHẠY FILE JAR TRONG builds/backend/)
+  # =========================================================================
+  gateway:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-gateway
+    restart: always
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/gateway.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  auth-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-auth-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/auth-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  user-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-user-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/user-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  goods-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-goods-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/goods-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  order-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-order-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/order-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  consumer:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-consumer
+    restart: always
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/consumer.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  xianzhu-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-xianzhu-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/xianzhu-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  supplier-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-supplier-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/supplier-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  system-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-system-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/system-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  payment-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-payment-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=256m /app/payment-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 450M
+
+  promotion-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-promotion-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/promotion-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  statistics-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-statistics-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/statistics-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  resource-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-resource-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/resource-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  broadcast-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-broadcast-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/broadcast-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  im-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-im-service
+    restart: always
+    depends_on:
+      - gateway
+    ports:
+      - "11130:11130"
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/im-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  distribution-service:
+    image: eclipse-temurin:21-jre-alpine
+    container_name: xianzhu-distribution-service
+    restart: always
+    depends_on:
+      - gateway
+    environment:
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=lilishop
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=lilishop
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=lilishop
+      - SEATA_SERVER_ADDR=seata-server:8091
+      - ELASTICSEARCH_HOST=elasticsearch
+    volumes:
+      - ./backend:/app
+    command: java -jar -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m /app/distribution-service.jar
+    networks:
+      - xianzhu-net
+    deploy:
+      resources:
+        limits:
+          memory: 320M

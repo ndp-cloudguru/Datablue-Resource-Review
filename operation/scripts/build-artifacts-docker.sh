@@ -8,6 +8,9 @@
 
 set -e
 
+# Tắt tự động convert đường dẫn POSIX trên Git Bash (Windows) khi truyền vào Docker
+export MSYS_NO_PATHCONV=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -d "${SCRIPT_DIR}/source-code" ]; then
     PROJECT_ROOT="${SCRIPT_DIR}"
@@ -89,7 +92,7 @@ build_backend_docker() {
         -e NEXUS_PASSWORD="${NEXUS_PASSWORD}" \
         -v "${TARGET_BACKEND_SRC}:/app" \
         -v "${MAVEN_CACHE_DIR}:/root/.m2" \
-        -v "${PROJECT_ROOT}/operation/deployment/settings.xml:/root/.m2/settings.xml" \
+        -v "${PROJECT_ROOT}/operation/scripts/settings.xml:/root/.m2/settings.xml" \
         -w /app \
         maven:3.9.6-eclipse-temurin-21 \
         mvn clean install -DskipTests
